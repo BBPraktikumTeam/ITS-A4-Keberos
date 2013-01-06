@@ -7,6 +7,8 @@ package Kerberos;
 import java.util.*;
 import java.io.*;
 
+import javax.print.attribute.standard.Severity;
+
 public class Server extends Object {
 
 	private final long fiveMinutesInMillis = 300000; // 5 Minuten in Millisekunden
@@ -33,9 +35,20 @@ public class Server extends Object {
 	}
 
 	public boolean requestService(Ticket srvTicket, Auth srvAuth, String command, String parameter) {
-	// TODO!!
+		boolean status = false;
+		srvTicket.print();
+		if(srvTicket.decrypt(myKey)) {
+			long authSessionKey = srvTicket.getSessionKey();
+			if(srvAuth.decrypt(authSessionKey)){
+				if(command == "showFile") {
+					status = this.showFile(parameter);
+				} else {
+					System.out.println("CANNOT UNDERSTAND COMMAND");
+				}
+			}
+		}
 		
-		return false;
+		return status;
 	}
 
 	/* *********** Services **************************** */
