@@ -29,16 +29,54 @@ public class Client extends Object {
 	}
 
 	public boolean login(String userName, char[] password) {
-	// TODO!!
+		String tgsServerName = "myTGS";
+		currentUser = userName;
+		//Anmeldung beim KDC, TGS Ticket holen
+		TicketResponse ticketResponse = myKDC.requestTGSTicket(userName, tgsServerName, generateNonce());
+		//TGS Response Entschlüsseln und auswerten
+		if (ticketResponse != null) {//TGS beim KDC Server bekannt
+			long pw = generateSimpleKeyForPassword(password);
+			if (ticketResponse.decrypt(pw)) {
+				//TGS Session Key und Ticket speichern
+				tgsSessionKey = ticketResponse.getSessionKey();
+				tgsTicket = ticketResponse.getResponseTicket();
+				tgsTicket.print();
+			}
+			//PAssword aus Hauptspeicher löschen
+			Arrays.fill(password, '0');
+		}
 		
-		return false;
+		return (tgsTicket != null);
 	}
 
 	public boolean showFile(String serverName, String filePath) {
-	// TODO!!
+		boolean status = false;
+		//Login Prüfen TGS Ticket vorhanden?
+		if (tgsTicket != null) {//Ohne TGS Ticket geht nichts	
+			//Serverticket vorhanden?
+			if (serverTicket == null) {//Kein Serverticket da, neues Anfordern
+				long currentTime = (new Date()).getTime();
+				Auth tgsAuth = new Auth(currentUser, currentTime);
+				tgsAuth.encrypt(tgsSessionKey);
+				TicketResponse ticketResponse = myKDC.requestServerTicket(tgsTicket, tgsAuth, serverName, generateNonce());
+				ticketResponse.print();
+				if(ticketResponse.decrypt(tgsSessionKey)) {
+					serverTicket = ticketResponse.getResponseTicket();
+					serverSessionKey = ticketResponse.getSessionKey();
+				}
+			}
+			//ServerTicket nun vorhanden? ANsonsten Ticket Response nicht entschlüsselbar etc...
+			if(serverTicket != null){
+				Auth serverAuth = new Auth(currentUser, (new Date()).getTime());
+				serverAuth.encrypt(serverSessionKey);
+				//Service anfordern
+				status = myFileserver.requestService(serverTicket, serverAuth, "showFile", filePath);
+				
+			}
+			
 		
-		
-		return false;
+		}
+		return status;
 	}
 
 	/* *********** Hilfsmethoden **************************** */
