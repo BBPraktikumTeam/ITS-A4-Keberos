@@ -38,13 +38,16 @@ public class Server extends Object {
 		boolean status = false;
 		srvTicket.print();
 		if(srvTicket.decrypt(myKey)) {
+			if(srvTicket.getServerName()== myName) {
 			long authSessionKey = srvTicket.getSessionKey();
 			if(srvAuth.decrypt(authSessionKey)){
+				if(srvAuth.getClientName() == srvTicket.getClientName() && timeValid(srvTicket.getStartTime(), srvTicket.getEndTime()) && timeFresh(srvAuth.getCurrentTime())) {
 				if(command == "showFile") {
 					status = this.showFile(parameter);
 				} else {
 					System.out.println("CANNOT UNDERSTAND COMMAND");
 				}
+			}}
 			}
 		}
 		

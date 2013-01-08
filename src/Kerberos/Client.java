@@ -51,7 +51,7 @@ public class Client extends Object {
 				
 			}
 			// PAssword aus Hauptspeicher löschen
-			Arrays.fill(password, '0');
+			Arrays.fill(password, ' ');
 		}
 
 		return (tgsTicket != null);
